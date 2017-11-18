@@ -1,7 +1,14 @@
 import csv, json, os
+from configobj import ConfigObj
 
+
+CONFIG_PATH = './config.ini'
+
+CONF = ConfigObj(CONFIG_PATH)
+
+gameweek = int(CONF['curr_gameweek'])
 # Get data from local
-INF_TPL = 'inputs/%s.json'
+INF_TPL = 'inputs/'+str(gameweek)+'/%s.json'
 TEAMS_PATH = INF_TPL%'teams'
 FIXTURES_PATH = INF_TPL%'fixtures'
 
@@ -58,8 +65,7 @@ def gen_ranked_fixtures(tfd, curr_gw, look_ahead):
   for k, tf in tfd.iteritems():
     t0avg, t0fixtures = rank_fixture(tf, curr_gw, look_ahead)
     t1avg, t1fixtures = rank_fixture(tf, curr_gw+1, look_ahead)
-    season_sum = sum(tf)
-    rfs.append(([k, t0avg, t0fixtures[0], t1avg] + t1fixtures + [season_sum]))
+    rfs.append(([k, t0avg, t0fixtures[0], t1avg] + t1fixtures))
   return rfs
 
 
@@ -69,13 +75,18 @@ TEAM = 'team'
 def write_fixture_ranks(tfd, curr_gw=1, look_ahead=5):
   T0AVG = '%s~%s_avg'%(curr_gw, curr_gw+look_ahead-1)
   T1AVG = '%s~%s_avg'%(curr_gw+1, curr_gw+1+look_ahead-1)
-  hdrs = [TEAM, T0AVG, curr_gw, T1AVG] + [i for i in xrange(curr_gw+1, curr_gw+1+look_ahead)] + ['season_sum']
-  if curr_gw:  # natural_number -> 0-index
-    curr_gw -= 1
-  with open('outputs/fixture_ranks_gw%s.csv'%curr_gw, 'wb') as outf:
+  hdrs = [TEAM, T0AVG, curr_gw, T1AVG] + [i for i in xrange(curr_gw+1, curr_gw+1+look_ahead)]
+
+  OUT_PARENT_DIR = 'outputs/%s'%curr_gw
+  if not os.path.exists(OUT_PARENT_DIR):
+    os.makedirs(OUT_PARENT_DIR)
+  outf_path = '%s/%s'%(OUT_PARENT_DIR, 'fixture_ranks.csv')
+  with open(outf_path, 'wb') as outf:
     wrtr = csv.DictWriter(outf, hdrs)
     wrtr.writeheader()
 
+    if curr_gw:  # natural_number -> 0-index
+      curr_gw -= 1
     rfs = gen_ranked_fixtures(tfd, curr_gw, look_ahead)
     rfd = [dict(zip(hdrs, rf)) for rf in rfs]
 
@@ -86,10 +97,8 @@ def write_fixture_ranks(tfd, curr_gw=1, look_ahead=5):
 
 
 if __name__ == '__main__':
-  CURR_GWS = [1, 2]  # TODO get from data
   LOOK_AHEAD = 5
 
-  for curr_gw in CURR_GWS:
-    td = gen_teams()
-    tfd = gen_team_fixtures(td)
-    write_fixture_ranks(tfd, curr_gw, LOOK_AHEAD)
+  td = gen_teams()
+  tfd = gen_team_fixtures(td)
+  write_fixture_ranks(tfd, gameweek, LOOK_AHEAD)
