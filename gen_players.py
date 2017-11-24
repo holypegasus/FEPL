@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 import csv, json, os
 from configobj import ConfigObj
-from util.unicode_csv_rw import DictUnicodeWriter
+# from util.unicode_csv_rw import DictUnicodeWriter
 
 
 CONFIG_PATH = './config.ini'
@@ -24,6 +24,7 @@ MpG = 'min/g'
 PRICE = 'price'
 SELECTED = '%'
 # filters
+# TODO func-ize filter
 TYPE_ALL = 'ALL'
 MINUTES_THD = 0.5*(gameweek-1)*90.0
 MIN_P_GAME_THD = 50.0  # minutes/game
@@ -37,7 +38,8 @@ def get_my_players(conf):
         first_name, last_name = player_name.split('_')
       else:
         first_name, last_name = '', player_name
-      ptyp8fn8ln.add((pos, first_name, last_name.decode('utf8')))
+      # ptyp8fn8ln.add((pos, first_name, last_name.decode('utf8')))
+      ptyp8fn8ln.add((pos, first_name, last_name))
   return ptyp8fn8ln
 
 
@@ -104,10 +106,12 @@ def write_pds(pds, sort_key=VApM, filter_type=TYPE_ALL):
   # write
   clean_sort_key = sort_key.replace('/', 'p')
   outf_name = '%s/%s_%s.csv'%(OUT_PARENT_DIR, filter_type, clean_sort_key)
-  with open(outf_name, 'w') as outf:
-    wrtr = DictUnicodeWriter(outf, OUTPUT_KS)
+  with open(outf_name, 'w', encoding='utf8') as outf:
+    # wrtr = DictUnicodeWriter(outf, OUTPUT_KS)
+    wrtr = csv.DictWriter(outf, OUTPUT_KS)
     wrtr.writeheader()
-    unicode_pds = [{k: unicode(v) for (k, v) in pd.iteritems()} for pd in filtered_pds]
+    # unicode_pds = [{k: unicode(v) for (k, v) in pd.items()} for pd in filtered_pds]
+    unicode_pds = [{k: v for (k, v) in pd.items()} for pd in filtered_pds]
     presorted_pds = sorted(unicode_pds, key=lambda pd: float(pd[sort_key]), reverse=True)
     wrtr.writerows(presorted_pds)
     # truncate final new-line to facilitate auto-csv-rendering in Github
@@ -119,7 +123,7 @@ def write_pds(pds, sort_key=VApM, filter_type=TYPE_ALL):
 BASE_PTS = 2.0
 SORT_KEYS = [VApM, PpG]
 # Get data from local copy
-with open('inputs/%s/bootstrap.json'%gameweek, 'rb') as inf:
+with open('inputs/%s/bootstrap.json'%gameweek, 'r', encoding='utf8') as inf:
   data = json.load(inf)
 
 N_MGRs = data.get('total-players')

@@ -15,14 +15,14 @@ FIXTURES_PATH = INF_TPL%'fixtures'
 
 
 def gen_teams():
-  with open(TEAMS_PATH, 'rb') as team_inf:
+  with open(TEAMS_PATH, 'r', encoding='utf8') as team_inf:
     td = {t['id']: t for t in json.load(team_inf)}
     return td
 
 
 def gen_team_fixtures(td):
   tfd = {t['short_name']: [] for t in td.values()}
-  with open(FIXTURES_PATH, 'rb') as fixture_inf:
+  with open(FIXTURES_PATH, 'r', encoding='utf8') as fixture_inf:
     fixtures = json.load(fixture_inf)
     for f in fixtures:
       team_h_id, team_h_difficulty = f['team_h'], f['team_h_difficulty']
@@ -36,7 +36,7 @@ def gen_team_fixtures(td):
 
 DEFAULT_DECAY = 0.5
 def decay_avg(ns, r=DEFAULT_DECAY):
-  avg = sum(n*r**i for i, n in enumerate(ns)) / sum(r**i for i in xrange(len(ns)))
+  avg = sum(n*r**i for i, n in enumerate(ns)) / sum(r**i for i in range(len(ns)))
   return round(avg, 2)
 
 # print 'test ordering'
@@ -62,7 +62,7 @@ def rank_fixture(tf, curr_gw, look_ahead):
 
 def gen_ranked_fixtures(tfd, curr_gw, look_ahead):
   rfs = []
-  for k, tf in tfd.iteritems():
+  for k, tf in tfd.items():
     t0avg, t0fixtures = rank_fixture(tf, curr_gw, look_ahead)
     t1avg, t1fixtures = rank_fixture(tf, curr_gw+1, look_ahead)
     rfs.append(([k, t0avg, t0fixtures[0], t1avg] + t1fixtures))
@@ -75,13 +75,13 @@ TEAM = 'team'
 def write_fixture_ranks(tfd, curr_gw=1, look_ahead=5):
   T0AVG = '%s~%s_avg'%(curr_gw, curr_gw+look_ahead-1)
   T1AVG = '%s~%s_avg'%(curr_gw+1, curr_gw+1+look_ahead-1)
-  hdrs = [TEAM, T0AVG, curr_gw, T1AVG] + [i for i in xrange(curr_gw+1, curr_gw+1+look_ahead)]
+  hdrs = [TEAM, T0AVG, curr_gw, T1AVG] + [i for i in range(curr_gw+1, curr_gw+1+look_ahead)]
 
   OUT_PARENT_DIR = 'outputs/%s'%curr_gw
   if not os.path.exists(OUT_PARENT_DIR):
     os.makedirs(OUT_PARENT_DIR)
   outf_path = '%s/%s'%(OUT_PARENT_DIR, 'fixture_ranks.csv')
-  with open(outf_path, 'wb') as outf:
+  with open(outf_path, 'w', encoding='utf8') as outf:
     wrtr = csv.DictWriter(outf, hdrs)
     wrtr.writeheader()
 

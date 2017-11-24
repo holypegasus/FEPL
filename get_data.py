@@ -1,4 +1,4 @@
-import json, os, urllib2
+import json, os, requests
 from configobj import ConfigObj
 
 
@@ -23,11 +23,12 @@ if not os.path.exists(GW_OUTPUTS_DIR):
   os.makedirs(GW_OUTPUTS_DIR)
 
 for typ in types:
-  html = urllib2.urlopen(URL_TPL%typ)
-  data = json.load(html)
+  html = requests.get(URL_TPL%typ).text
+  data = json.loads(html)
+  print(len(data))
 
   outf_path = '%s/%s.json'%(OUT_PARENT_DIR, typ)
   print(outf_path)
-  with open(outf_path, 'wb') as outf:
+  with open(outf_path, 'w', encoding='utf8') as outf:
     json.dump(data, outf)
 
