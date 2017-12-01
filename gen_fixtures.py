@@ -1,5 +1,8 @@
 import csv, json, os
+
 from configobj import ConfigObj
+
+import get_data
 
 
 CONFIG_PATH = './config.ini'
@@ -20,7 +23,7 @@ def gen_teams():
     return td
 
 
-def gen_team_fixtures(td):
+def gen_team_fixture(td):
   tfd = {t['short_name']: [] for t in td.values()}
   with open(FIXTURES_PATH, 'r', encoding='utf8') as fixture_inf:
     fixtures = json.load(fixture_inf)
@@ -33,7 +36,34 @@ def gen_team_fixtures(td):
       tfd[team_a_name].append(team_a_difficulty)
   return tfd
 
+# utils to update rump fixture eg BGW & DGW
+BGW = 6
+def dgw(fixt0, fixt1):
+  return (fixt0+fixt1)/2
 
+update_team2fixts = {
+  ('ARS'): [ 2, 2, 2, 2, 4, dgw(3, 3), 2],
+  ('BHA'): [ 3, 2, dgw(3, 4), BGW, 3, dgw(4, 5), 4],
+  ('BUR'): [ 2, 2, dgw(3, 4), 3, 2, 4, 2],
+  ('CHE'): [ 4, 2, dgw(2, 3), BGW, 2, dgw(4, 2), 2],
+  ('LEI'): [ 2, 2, dgw(3, 2), BGW, 3, dgw(2, 4), 5],
+  ('MCI'): [ 3, 4, 5, 2, 3, dgw(2, 2), 2],
+  ('MUN'): [ 2, 5, dgw(2, 3), BGW, 4, dgw(2, 3), 2],
+  ('NEW'): [ 2, 3, 4, 3, 2, dgw(2, 5), 4],
+  ('SOU'): [ 3, 4, dgw(4, 3), BGW, 2, dgw(3, 2), 5],
+  ('TOT'): [ 4, 3, dgw(5, 2), BGW, 2, dgw(2, 2), 3],
+  ('SWA'): [ 4, 2, 2, 5, 4, dgw(3, 2), 2],
+  ('WHU'): [ 2, 4, 2, 4, 5, dgw(3, 2), 4],
+}
+def update_fixture(tfd, gameweek):
+  for team, fixts in update_team2fixts.items():
+    # print(team)
+    for i, fixt in enumerate(fixts):
+      # print(gameweek-1+i, fixt)
+      tfd[team][gameweek-1+i] = fixt
+  return tfd
+
+# calc cumulatives
 DEFAULT_DECAY = 0.5
 def decay_avg(ns, r=DEFAULT_DECAY):
   avg = sum(n*r**i for i, n in enumerate(ns)) / sum(r**i for i in range(len(ns)))
@@ -97,8 +127,13 @@ def write_fixture_ranks(tfd, curr_gw=1, look_ahead=5):
 
 
 if __name__ == '__main__':
+  get_data.get_all_data()
+
   LOOK_AHEAD = 5
 
   td = gen_teams()
-  tfd = gen_team_fixtures(td)
+  tfd = gen_team_fixture(td)
+  # manual update eg for double-gameweeks
+  if update_team2fixts:
+    tfd = update_fixture(tfd, gameweek)
   write_fixture_ranks(tfd, gameweek, LOOK_AHEAD)
