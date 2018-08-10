@@ -1,6 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
-
 import csv, datetime, json, os
 
 from configobj import ConfigObj
@@ -10,7 +9,6 @@ import get_data
 
 
 CONFIG_PATH = 'config.ini'
-
 CONF = ConfigObj(CONFIG_PATH)
 
 
@@ -53,6 +51,7 @@ PpG = 'p/g'
 PpGL = 'p/gl'  # G60
 FORM = 'form'
 MINUTES = 'min'
+MinPct = 'm%'  # % of possible minutes played
 MpG = 'm/g'
 PRICE = 'price'
 SELECTED = '%'
@@ -77,7 +76,7 @@ TYP2MIN_PRICE = {
   'D': 4.0,
   'M': 4.5,
   'F': 4.5,
-}
+  }
 CACHE = dict()  # TMP pid -> analyses
 def gen_pds():
   # TODO enrich w/ player detail data 
@@ -113,6 +112,7 @@ def gen_pds():
     _price_above_min = price - _typ_min_price + 0.5
     vapmar = round(_ppgar / _price_above_min, 2)  # value-added/game/million above-replacement
     minutes = p.get('minutes')
+    minute_percent = round(p.get('minutes')/((gameweek-1)*90) *100)
     min_p_game = round(minutes / n_games) if n_games!=0 else 0
     selected_by_percent = float(p.get('selected_by_percent'))
     watched = watch(p_type, first_name, web_name, WATCHLIST)
@@ -134,6 +134,7 @@ def gen_pds():
       POINTS: total_pts,
       GAMES: n_games,
       MINUTES: minutes,
+      MinPct: minute_percent,
       MpG: min_p_game,
       SELECTED: selected_by_percent,
       NET_TRANSFER: net_transfer,
@@ -146,29 +147,30 @@ def gen_pds():
 def now_str():
   return datetime.datetime.now().strftime('%m%d%H')
 
-# filters
+# filters - OR ie satisfy any to remain
 # TODO func-ize filter
 # inj/susp
 TYPE_ALL = 'ALL'
-THRES_TIME = 0.5
-THRES_FORM = 3.0
+THRES_TIME = 0.65
+THRES_FORM = 4.0
 # -> filtered player dicts: [dict]
 def filter_pds(pds, filter_type, cols):
   filtered_pds = [
-    dict((k, v) for k, v in pd.items() if k in cols) for pd in pds if (
-    (
-      filter_type==TYPE_ALL or filter_type == pd[PLAYER_TYPE])
-      and (
-        watch(pd[PLAYER_TYPE], pd[FIRST_NAME], pd[WEB_NAME], WATCHLIST)
-        or pd[MINUTES] >= THRES_TIME*(gameweek-1)*90.0
-        or pd[FORM] >= THRES_FORM
-      )
-  )]
+    dict((k, v) for k, v in pd.items() if k in cols) for pd in pds if 
+    all([
+      filter_type==TYPE_ALL or filter_type == pd[PLAYER_TYPE],
+      any([
+        watch(pd[PLAYER_TYPE], pd[FIRST_NAME], pd[WEB_NAME], WATCHLIST),
+        pd[MINUTES] >= THRES_TIME*(gameweek-1)*90.0,
+        pd[FORM] >= THRES_FORM,
+        ])
+      ])
+    ]
   return filtered_pds
 
 
 # This drives output csv header-order
-OUTPUT_KS = [WATCHED, FIRST_NAME, WEB_NAME, TEAM, PLAYER_TYPE, VApM, VApML, PpG, PpGL, FORM, MINUTES, PRICE, SELECTED, NET_TRANSFER, GROWTH_FACTOR, now_str()]
+OUTPUT_KS = [WATCHED, FIRST_NAME, WEB_NAME, TEAM, PLAYER_TYPE, VApM, VApML, PpG, PpGL, FORM, MinPct, PRICE, SELECTED, NET_TRANSFER, GROWTH_FACTOR, now_str()]
 def write_pds(pds, sort_key=VApM, filter_type=TYPE_ALL):   
   # filter
   filtered_pds = filter_pds(pds, filter_type, set(OUTPUT_KS))
@@ -230,4 +232,5 @@ if __name__ == '__main__':
   for typ, sk in TYP2SORT_KEY.items():
     print('Type: %s; Sort-key: %s'%(typ, sk))
     write_pds(pds=gen_pds(), sort_key=sk, filter_type=typ)
+
 

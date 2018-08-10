@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-
-import csv, json, os
+import csv, json, logging, os
+from itertools import chain
 
 from configobj import ConfigObj
 
@@ -22,6 +22,7 @@ FIXTURES_PATH = INF_TPL%'fixtures'
 def gen_teams():
   with open(TEAMS_PATH, 'r', encoding='utf8') as team_inf:
     td = {t['id']: t for t in json.load(team_inf)}
+    logging.info(td)
     return td
 
 
@@ -43,7 +44,8 @@ BGW = 6
 def dgw(fixt0, fixt1):
   return round((fixt0+fixt1) * 0.4, 2)
 
-update_team2fixts = {
+update_team2fixts = {}
+"""
   ('ARS'): [2, 2, 2, 4, dgw(3, 3), 2],  ### 37
   ('BOU'): [2, dgw(4, 4), BGW, 2, 2, 3],
   ('BHA'): [2, dgw(3, 4), BGW, 3, dgw(4, 5), 4],
@@ -64,7 +66,7 @@ update_team2fixts = {
   ('WAT'): [3, 2, 2, 5, 2, 4],  ##
   ('WBA'): [2, 4, 4, 2, 4, 3],
   ('WHU'): [4, 2, 4, 5, dgw(3, 4), 2],
-}
+  """
 def update_fixture(tfd, gameweek):
   for team, fixts in update_team2fixts.items():
     print(team)
@@ -100,34 +102,36 @@ def rank_fixture(tf, curr_gw, look_ahead):
   return avg, scoped_fixtures
 
 
-def gen_ranked_fixtures(tfd, curr_gw, look_ahead):
+def gen_ranked_fixtures(tfd, curr_gw, n_avgs, look_ahead):
   rfs = []
   for k, tf in tfd.items():
     t0avg, t0fixtures = rank_fixture(tf, curr_gw, look_ahead)
     t1avg, t1fixtures = rank_fixture(tf, curr_gw+1, look_ahead)
-    rfs.append(([k, t0avg, t0fixtures[0], t1avg] + t1fixtures))
+    t2avg, t2fixtures = rank_fixture(tf, curr_gw+2, look_ahead)
+    rfs.append(([k, t0avg, t0fixtures[0], t1avg, t1fixtures[0], t2avg] + t2fixtures))
   return rfs
 
 
 # keys
 TEAM = 'team'
 
-def write_fixture_ranks(tfd, curr_gw=1, look_ahead=5):
+def write_fixture_ranks(tfd, curr_gw=1, n_avgs=3, look_ahead=4):
   T0AVG = '%s~%s_avg'%(curr_gw, curr_gw+look_ahead-1)
   T1AVG = '%s~%s_avg'%(curr_gw+1, curr_gw+1+look_ahead-1)
-  hdrs = [TEAM, T0AVG, curr_gw, T1AVG] + [i for i in range(curr_gw+1, curr_gw+1+look_ahead)]
+  T2AVG = '%s~%s_avg'%(curr_gw+2, curr_gw+2+look_ahead-1)
+  hdrs = [TEAM, T0AVG, curr_gw, T1AVG, curr_gw+1, T2AVG] + [i for i in range(curr_gw+2, curr_gw+2+look_ahead)]
 
   OUT_PARENT_DIR = 'outputs/%s'%curr_gw
   if not os.path.exists(OUT_PARENT_DIR):
     os.makedirs(OUT_PARENT_DIR)
-  outf_path = '%s/%s'%(OUT_PARENT_DIR, 'fixture_ranks.csv')
+  outf_path = '%s/%s'%(OUT_PARENT_DIR, 'fr%s.csv'%curr_gw)
   with open(outf_path, 'w', encoding='utf8') as outf:
     wrtr = csv.DictWriter(outf, hdrs)
     wrtr.writeheader()
 
     if curr_gw:  # natural_number -> 0-index
       curr_gw -= 1
-    rfs = gen_ranked_fixtures(tfd, curr_gw, look_ahead)
+    rfs = gen_ranked_fixtures(tfd, curr_gw, n_avgs, look_ahead)
     rfd = [dict(zip(hdrs, rf)) for rf in rfs]
 
     presorted_rfs = sorted(rfd, key=lambda rf: float(rf[T0AVG]))
@@ -139,11 +143,14 @@ def write_fixture_ranks(tfd, curr_gw=1, look_ahead=5):
 if __name__ == '__main__':
   get_data.get_all_data()
 
-  LOOK_AHEAD = 5
+  N_AVGS = 3
+  LOOK_AHEAD = 4
 
   td = gen_teams()
   tfd = gen_team_fixture(td)
   # manual update eg for double-gameweeks
   if update_team2fixts:
     tfd = update_fixture(tfd, gameweek)
-  write_fixture_ranks(tfd, gameweek, LOOK_AHEAD)
+  write_fixture_ranks(tfd, gameweek, N_AVGS, LOOK_AHEAD)
+
+

@@ -15,7 +15,7 @@ DIR_OUTPUT_GW = os.path.join('outputs', gameweek)
 
 # Get data from web API
 URL_BASE = 'https://fantasy.premierleague.com/drf/%s'
-types = [
+TYPES = [
   'bootstrap',  # overall
   'fixtures',
   'teams'
@@ -106,7 +106,7 @@ def get_typ_data(typ, refresh=False):
 
 
 def get_all_data():
-  for typ in types:
+  for typ in TYPES:
     get_typ_data(typ)
 
 

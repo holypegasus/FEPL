@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-
+#!/usr/bin/env python3
 import pandas as pd
 
 
@@ -12,7 +10,7 @@ import pandas as pd
 
 # player
 # pid -> analysis
-THRES_LONG = 50  # minutes considered 'long'-game
+THRES_LONG = 60  # minutes considered 'long'-game
 def calc_ppgs(pid, dict_player):
   print('Analyzing %s'%pid)
 

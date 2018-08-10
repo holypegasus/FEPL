@@ -1,0 +1,12 @@
+gw2
+> Firmino: decent perf; make weight
+> Jota: no return; mkt
+> Cedric: no return; mkt
+> Luiz: decent perf; upgrade
+
+< Wilson: perf & fixt; make weight
+< Mkhitaryan: perf & fixt
+< Alonso: perf & fixt & mkt
+< Mendy: perf & fixt & mkt
+
+
