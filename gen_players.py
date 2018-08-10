@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+
 import csv, datetime, json, os
 
 from configobj import ConfigObj
@@ -10,22 +12,35 @@ import get_data
 CONFIG_PATH = 'config.ini'
 
 CONF = ConfigObj(CONFIG_PATH)
-def get_my_players(conf):  # set([ (pos, first_name, last_name) ])
-  ptyp8fn8ln = set()
-  for pos, player_names in conf['owned'].items():
-    for player_name in player_names:
-      if '_' in player_name:
-        first_name, last_name = player_name.split('_')
-      else:
-        first_name, last_name = '', player_name
-      # ptyp8fn8ln.add((pos, first_name, last_name.decode('utf8')))
-      ptyp8fn8ln.add((pos, first_name, last_name))
-  return ptyp8fn8ln
-MY_POS8FN8LN = get_my_players(CONF)
+
+
+def get_watchlist(conf):  # set([ (pos, first_name, last_name) ])
+  def get_names_first8last(player_name):
+    if '_' in player_name:
+      name_first, name_last = player_name.split('_')
+    else:
+      name_first, name_last = '', player_name
+    return name_first, name_last
+
+  def get__by_section(section):
+    pos_fn_ln2sect = dict()
+    for pos, player_names in conf[section].items():
+      for player_name in player_names:
+        name_first, name_last = get_names_first8last(player_name)
+        key = (pos, name_first, name_last)
+        pos_fn_ln2sect[key] = section
+    return pos_fn_ln2sect
+
+  players_owned = get__by_section('owned')
+  players_monit = get__by_section('monit')
+  # if in both, owned overrides
+  players_watched = {**players_monit, **players_owned}
+  return players_watched
+WATCHLIST = get_watchlist(CONF)
 
 gameweek = int(CONF['curr_gameweek'])
 # keys
-OWNED = 'O'
+WATCHED = 'W'
 FIRST_NAME = 'I'
 WEB_NAME = 'web_name'
 TEAM = 'team'
@@ -45,13 +60,16 @@ NET_TRANSFER = 'txn'
 GROWTH_FACTOR = 'gf'
 
 
+# annotate watchlisted players
+def watch(pos, fn, ln, watchlist):
+  key_fn8ln = (pos, fn, ln)
+  key_ln = (pos, '', ln)
+  key = key_ln if key_ln in watchlist else key_fn8ln
 
-def own(pos, fn, ln, _my_pos8fn8ln):
-  if (pos, fn, ln) in _my_pos8fn8ln or (pos, '', ln) in _my_pos8fn8ln:
-    return 'x'
-  else:
-    return ''
-
+  section = watchlist.get(key)  # owned | monit
+  mark = section[0] if section else ''
+  # print((key, mark))
+  return mark
 
 # compute Player-DictS
 TYP2MIN_PRICE = {
@@ -97,12 +115,12 @@ def gen_pds():
     minutes = p.get('minutes')
     min_p_game = round(minutes / n_games) if n_games!=0 else 0
     selected_by_percent = float(p.get('selected_by_percent'))
-    owned = own(p_type, first_name, web_name, MY_POS8FN8LN)
+    watched = watch(p_type, first_name, web_name, WATCHLIST)
     net_transfer = p.get('transfers_in_event') - p.get('transfers_out_event')
     growth_factor = 0. if selected_by_percent==0. else round(net_transfer / N_MGRs * 100 / selected_by_percent * 100)
 
     pd = {  # player dict
-      OWNED: owned,
+      WATCHED: watched,
       TEAM: team,
       FIRST_NAME: first_name,
       WEB_NAME: web_name,
@@ -141,7 +159,7 @@ def filter_pds(pds, filter_type, cols):
     (
       filter_type==TYPE_ALL or filter_type == pd[PLAYER_TYPE])
       and (
-        own(pd[PLAYER_TYPE], pd[FIRST_NAME], pd[WEB_NAME], MY_POS8FN8LN)
+        watch(pd[PLAYER_TYPE], pd[FIRST_NAME], pd[WEB_NAME], WATCHLIST)
         or pd[MINUTES] >= THRES_TIME*(gameweek-1)*90.0
         or pd[FORM] >= THRES_FORM
       )
@@ -150,7 +168,7 @@ def filter_pds(pds, filter_type, cols):
 
 
 # This drives output csv header-order
-OUTPUT_KS = [OWNED, FIRST_NAME, WEB_NAME, TEAM, PLAYER_TYPE, VApM, VApML, PpG, PpGL, FORM, MINUTES, PRICE, SELECTED, NET_TRANSFER, GROWTH_FACTOR, now_str()]
+OUTPUT_KS = [WATCHED, FIRST_NAME, WEB_NAME, TEAM, PLAYER_TYPE, VApM, VApML, PpG, PpGL, FORM, MINUTES, PRICE, SELECTED, NET_TRANSFER, GROWTH_FACTOR, now_str()]
 def write_pds(pds, sort_key=VApM, filter_type=TYPE_ALL):   
   # filter
   filtered_pds = filter_pds(pds, filter_type, set(OUTPUT_KS))

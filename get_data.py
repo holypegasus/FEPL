@@ -1,4 +1,7 @@
+#!/usr/bin/env python3
+
 import json, os, requests
+
 import pandas as pd
 from configobj import ConfigObj
 

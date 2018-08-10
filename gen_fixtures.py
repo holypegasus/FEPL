@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import csv, json, os
 
 from configobj import ConfigObj
@@ -39,27 +41,35 @@ def gen_team_fixture(td):
 # utils to update rump fixture eg BGW & DGW
 BGW = 6
 def dgw(fixt0, fixt1):
-  return (fixt0+fixt1)/2
+  return round((fixt0+fixt1) * 0.4, 2)
 
 update_team2fixts = {
-  ('ARS'): [ 2, 2, 2, 2, 4, dgw(3, 3), 2],
-  ('BHA'): [ 3, 2, dgw(3, 4), BGW, 3, dgw(4, 5), 4],
-  ('BUR'): [ 2, 2, dgw(3, 4), 3, 2, 4, 2],
-  ('CHE'): [ 4, 2, dgw(2, 3), BGW, 2, dgw(4, 2), 2],
-  ('LEI'): [ 2, 2, dgw(3, 2), BGW, 3, dgw(2, 4), 5],
-  ('MCI'): [ 3, 4, 5, 2, 3, dgw(2, 2), 2],
-  ('MUN'): [ 2, 5, dgw(2, 3), BGW, 4, dgw(2, 3), 2],
-  ('NEW'): [ 2, 3, 4, 3, 2, dgw(2, 5), 4],
-  ('SOU'): [ 3, 4, dgw(4, 3), BGW, 2, dgw(3, 2), 5],
-  ('TOT'): [ 4, 3, dgw(5, 2), BGW, 2, dgw(2, 2), 3],
-  ('SWA'): [ 4, 2, 2, 5, 4, dgw(3, 2), 2],
-  ('WHU'): [ 2, 4, 2, 4, 5, dgw(3, 2), 4],
+  ('ARS'): [2, 2, 2, 4, dgw(3, 3), 2],  ### 37
+  ('BOU'): [2, dgw(4, 4), BGW, 2, 2, 3],
+  ('BHA'): [2, dgw(3, 4), BGW, 3, dgw(4, 5), 4],
+  ('BUR'): [2, dgw(3, 4), 3, 2, 4, 2],  ##
+  ('CHE'): [2, dgw(2, 3), BGW, 2, dgw(4, 2), 2],  ## 34, 37
+  ('CRY'): [3, 2, 2, 3, 3, 2],  ###
+  ('EVE'): [4, 2, 2, 2, 2, 3],  ##
+  ('HUD'): [2, 2, BGW, 2, dgw(5, 4), 4],
+  ('LEI'): [2, dgw(3, 2), BGW, 3, dgw(2, 4), 5],  ## 34, 37
+  ('LIV'): [3, 2, 2, 2, 4, 2],  ##
+  ('MCI'): [4, 5, 2, 3, dgw(2, 2), 2],  # 37
+  ('MUN'): [5, dgw(2, 3), BGW, 4, dgw(2, 3), 2],  ## 34, 37
+  ('NEW'): [3, 4, 3, 2, dgw(2, 5), 4],  ##
+  ('SOU'): [4, dgw(4, 3), BGW, 2, dgw(3, 2), 5],
+  ('STK'): [4, 3, 3, 4, 2, 2],
+  ('TOT'): [3, dgw(5, 2), BGW, 2, dgw(2, 2), 3],  ## 37
+  ('SWA'): [2, 2, 5, 4, dgw(3, 2), 2],  ## 37
+  ('WAT'): [3, 2, 2, 5, 2, 4],  ##
+  ('WBA'): [2, 4, 4, 2, 4, 3],
+  ('WHU'): [4, 2, 4, 5, dgw(3, 4), 2],
 }
 def update_fixture(tfd, gameweek):
   for team, fixts in update_team2fixts.items():
-    # print(team)
+    print(team)
     for i, fixt in enumerate(fixts):
-      # print(gameweek-1+i, fixt)
+      print(gameweek-1+i, fixt)
       tfd[team][gameweek-1+i] = fixt
   return tfd
 
