@@ -8,9 +8,9 @@ from configobj import ConfigObj
 
 CONFIG_PATH = 'config.ini'
 CONF = ConfigObj(CONFIG_PATH)
-gameweek = CONF['curr_gameweek']
-DIR_INPUT_GW = os.path.join('inputs', gameweek)
-DIR_OUTPUT_GW = os.path.join('outputs', gameweek)
+str_gameweek = CONF['curr_gameweek']
+DIR_INPUT_GW = os.path.join('inputs', str_gameweek)
+DIR_OUTPUT_GW = os.path.join('outputs', str_gameweek)
 
 
 # Get data from web API
@@ -19,7 +19,7 @@ TYPES = [
   'bootstrap',  # overall
   'fixtures',
   'teams'
-]
+  ]
 
 
 def _setup_dirs():

@@ -10,18 +10,18 @@ import pandas as pd
 
 # player
 # pid -> analysis
-THRES_LONG = 60  # minutes considered 'long'-game
+THRES_LONG = 55  # minutes considered 'long'-game
 def calc_ppgs(pid, dict_player):
   print('Analyzing %s'%pid)
 
   stats = {
     'ppg_naive': 0.,
     'ppg_long': 0.,
-  }
+    }
 
-  if not dict_player:
-    return stats
+  if not dict_player: return stats
 
+  # calc adv stats
   history_fixtures = dict_player.get('history', [dict()])  # [gw1, gw2, ...]
   df_hist = pd.DataFrame(history_fixtures)
 
