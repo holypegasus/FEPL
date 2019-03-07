@@ -165,7 +165,7 @@ def filter_pds(pds, filter_type, cols):
 
 
 # This drives output csv header-order
-OUTPUT_KS = [WATCHED, FIRST_NAME, WEB_NAME, TEAM, PLAYER_TYPE, PRICE, VApM, VApML, PpG, PpGL, FORM, MinPct, SELECTED, NET_TRANSFER, GROWTH_FACTOR, now_str()]
+OUTPUT_KS = [WATCHED, FIRST_NAME, WEB_NAME, TEAM, PLAYER_TYPE, PRICE, MinPct, VApM, VApML, PpG, PpGL, FORM, SELECTED, NET_TRANSFER, GROWTH_FACTOR, now_str()]
 def write_pds(out_parent_dir, pds, sort_key=VApM, filter_type=TYPE_ALL):   
   # filter
   filtered_pds = filter_pds(pds, filter_type, set(OUTPUT_KS))
@@ -230,8 +230,8 @@ def run(refresh):
 
 
 if __name__ == '__main__':
-  # refresh = True
   refresh = False
+  # refresh = True
   run(refresh)
 
 
